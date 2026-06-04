@@ -1,0 +1,52 @@
+# Build directories
+build/
+**/build/
+cmake-build-*/
+
+# CMake generated files
+CMakeFiles/
+**/CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+CTestTestfile.cmake
+CMakeDirectoryInformation.cmake
+DartConfiguration.tcl
+install_manifest.txt
+progress.marks
+DependInfo.cmake
+compiler_depend.make
+compiler_depend.ts
+depend.make
+flags.make
+link.txt
+build.make
+cmake_clean.cmake
+cmake_clean_target.cmake
+
+# Make / Ninja
+Makefile
+build.ninja
+.ninja_deps
+.ninja_log
+rules.ninja
+
+# Compiled files
+*.o
+*.obj
+*.a
+*.so
+*.dll
+*.dylib
+*.exe
+*.out
+
+# Test/runtime
+*.log
+*.tmp
+*.db
+*.dat
+core
+core.*
+
+.vscode/
+build/

@@ -16,6 +16,7 @@ class RmFileHandle;
 
 class RmScan : public RecScan {
     const RmFileHandle *file_handle_;
+    //指针，当前访问到的record
     Rid rid_;
 public:
     RmScan(const RmFileHandle *file_handle);

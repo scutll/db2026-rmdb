@@ -47,6 +47,3 @@ rules.ninja
 *.dat
 core
 core.*
-
-.vscode/
-build/

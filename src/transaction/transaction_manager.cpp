@@ -28,7 +28,16 @@ Transaction * TransactionManager::begin(Transaction* txn, LogManager* log_manage
     // 4. 返回当前事务指针
     // 如果需要支持MVCC请在上述过程中添加代码
     
-    return nullptr;
+    if(txn == nullptr){
+        txn = new Transaction(next_txn_id_++);
+    }
+
+    txn->set_state(TransactionState::GROWING);
+
+    std::unique_lock<std::mutex> lock(latch_);
+    txn_map[txn->get_transaction_id()] = txn;
+
+    return txn;
 }
 
 /**
@@ -45,6 +54,11 @@ void TransactionManager::commit(Transaction* txn, LogManager* log_manager) {
     // 5. 更新事务状态
     // 如果需要支持MVCC请在上述过程中添加代码
 
+    if(txn == nullptr){
+        return;
+    }
+
+    txn->set_state(TransactionState::COMMITTED);
 }
 
 /**
@@ -60,5 +74,8 @@ void TransactionManager::abort(Transaction * txn, LogManager *log_manager) {
     // 4. 把事务日志刷入磁盘中
     // 5. 更新事务状态
     // 如果需要支持MVCC请在上述过程中添加代码
-    
+    if(txn == nullptr){
+        return;
+    }
+    txn->set_state(TransactionState::ABORTED);
 }

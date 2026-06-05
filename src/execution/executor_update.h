@@ -14,6 +14,7 @@ See the Mulan PSL v2 for more details. */
 #include "executor_abstract.h"
 #include "index/ix.h"
 #include "system/sm.h"
+#include <cstring>
 
 class UpdateExecutor : public AbstractExecutor {
    private:
@@ -22,7 +23,7 @@ class UpdateExecutor : public AbstractExecutor {
     RmFileHandle *fh_;
     std::vector<Rid> rids_;
     std::string tab_name_;
-    std::vector<SetClause> set_clauses_;
+    std::vector<SetClause> set_clauses_; // SET 句子列表,lhs->列 rhs->新值
     SmManager *sm_manager_;
 
    public:
@@ -30,16 +31,42 @@ class UpdateExecutor : public AbstractExecutor {
                    std::vector<Condition> conds, std::vector<Rid> rids, Context *context) {
         sm_manager_ = sm_manager;
         tab_name_ = tab_name;
-        set_clauses_ = set_clauses;
+        set_clauses_ = set_clauses;         
         tab_ = sm_manager_->db_.get_table(tab_name);
         fh_ = sm_manager_->fhs_.at(tab_name).get();
-        conds_ = conds;
-        rids_ = rids;
+        conds_ = conds;         
+        rids_ = rids;           //需要进行修改的记录位置
         context_ = context;
     }
     std::unique_ptr<RmRecord> Next() override {
-        
+        for(auto& rid: rids_){
+            auto rec = fh_->get_record(rid, context_);
+
+            for(auto& set_clause: set_clauses_){
+                auto col = tab_.get_col(set_clause.lhs.col_name);
+
+                if(col->type != set_clause.rhs.type){
+                    throw IncompatibleTypeError(
+                        coltype2str(col->type),
+                        coltype2str(set_clause.rhs.type));
+                }
+
+                if(set_clause.rhs.raw == nullptr){
+                    set_clause.rhs.init_raw(col->len);
+                }
+
+                memcpy(rec->data + col->offset, set_clause.rhs.raw->data, col->len);
+            }
+
+            fh_->update_record(rid, rec->data, context_);
+        }
+
         return nullptr;
+        }
+
+    std::string getType() override
+    {
+        return "UpdateExecutor";
     }
 
     Rid &rid() override { return _abstract_rid; }

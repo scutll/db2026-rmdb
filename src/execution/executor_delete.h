@@ -20,7 +20,7 @@ class DeleteExecutor : public AbstractExecutor {
     TabMeta tab_;                   // 表的元数据
     std::vector<Condition> conds_;  // delete的条件
     RmFileHandle *fh_;              // 表的数据文件句柄
-    std::vector<Rid> rids_;         // 需要删除的记录的位置
+    std::vector<Rid> rids_;         // 需要删除的记录的位置，在此之前Portal已经找好了需要删除的记录
     std::string tab_name_;          // 表名称
     SmManager *sm_manager_;
 
@@ -37,7 +37,15 @@ class DeleteExecutor : public AbstractExecutor {
     }
 
     std::unique_ptr<RmRecord> Next() override {
+        for(auto& rid: rids_){
+            fh_->delete_record(rid, context_);
+        }
+
         return nullptr;
+    }
+    std::string getType() override
+    {
+        return "DeleteExecutor";
     }
 
     Rid &rid() override { return _abstract_rid; }

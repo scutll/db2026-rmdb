@@ -179,7 +179,7 @@ std::shared_ptr<Plan> Planner::make_one_rel(std::shared_ptr<Query> query)
         // 有连接条件
 
         // 根据连接条件，生成第一层join
-        std::vector<std::string> joined_tables(tables.size());
+        std::vector<std::string> joined_tables;
         auto it = conds.begin();
         while (it != conds.end()) {
             std::shared_ptr<Plan> left , right;
@@ -252,8 +252,8 @@ std::shared_ptr<Plan> Planner::make_one_rel(std::shared_ptr<Query> query)
     //连接剩余表
     for (size_t i = 0; i < tables.size(); i++) {
         if(scantbl[i] == -1) {
-            table_join_executors = std::make_shared<JoinPlan>(T_NestLoop, std::move(table_scan_executors[i]), 
-                                                    std::move(table_join_executors), std::vector<Condition>());
+            table_join_executors = std::make_shared<JoinPlan>(T_NestLoop, std::move(table_join_executors), 
+                                                    std::move(table_scan_executors[i]), std::vector<Condition>());
         }
     }
 

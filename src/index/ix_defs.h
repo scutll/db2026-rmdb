@@ -27,15 +27,19 @@ public:
     page_id_t first_free_page_no_;      // 文件中第一个空闲的磁盘页面的页面号
     int num_pages_;                     // 磁盘文件中页面的数量
     page_id_t root_page_;               // B+树根节点对应的页面号
-    int col_num_;                       // 索引包含的字段数量
+
+    //这一段是跟单个keys的结构相关的，一个key可能由多个字段组成(联合索引), 所以用下面的字段来进行访问操作
+    int col_num_;                       // 单个索引包含的字段数量
     std::vector<ColType> col_types_;    // 字段的类型
     std::vector<int> col_lens_;         // 字段的长度
-    int col_tot_len_;                   // 索引包含的字段的总长度
+    int col_tot_len_;                   // 索引包含的字段的总长度，即key的长度
     int btree_order_;                   // # children per page 每个结点最多可插入的键值对数量
-    int keys_size_;                     // keys_size = (btree_order + 1) * col_tot_len
+    int keys_size_;                     // keys_size = (btree_order + 1) * col_tot_len 一个节点可容纳key数量 * key长度 -> 预留的总空间大小
     // first_leaf初始化之后没有进行修改，只不过是在测试文件中遍历叶子结点的时候用了
+
+
     page_id_t first_leaf_;              // 首叶节点对应的页号，在上层IxManager的open函数进行初始化，初始化为root page_no
-    page_id_t last_leaf_;               // 尾叶节点对应的页号
+    page_id_t last_leaf_;               // 尾叶节点对应的页号(非哨兵)
     int tot_len_;                       // 记录结构体的整体长度
 
     IxFileHdr() {

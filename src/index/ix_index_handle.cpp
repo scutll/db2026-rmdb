@@ -65,8 +65,8 @@ int IxNodeHandle::upper_bound(const char *target) const {
             right = mid;
         }
 
-        return left;
     }
+    return left;
 }
 
 /**
@@ -209,7 +209,7 @@ void IxNodeHandle::erase_pair(int pos) {
     //末尾数据随着size缩小并不会被访问，被逻辑删除，也不需要显式进行释放
     if(pos < old_size - 1){
         memmove(get_key(pos), get_key(pos + 1), (old_size - pos - 1) * key_len);
-        memmove(get_rid(pos), get_rid(pos + 1), (old_size - pos - 1) * key_len);
+        memmove(get_rid(pos), get_rid(pos + 1), (old_size - pos - 1) * sizeof(Rid));
     }
 
     set_size(old_size - 1);
@@ -425,7 +425,7 @@ void IxIndexHandle::insert_into_parent(IxNodeHandle *old_node, const char *key, 
         old_node->set_parent_page_no(new_root->get_page_no());
         new_node->set_parent_page_no(new_root->get_page_no());
 
-        update_root_page_no(new_root->get_parent_page_no());
+        update_root_page_no(new_root->get_page_no());
         //谁fetch/create谁unpin
         assert(buffer_pool_manager_->unpin_page(new_root->get_page_id(), true));
 
@@ -578,6 +578,7 @@ bool IxIndexHandle::coalesce_or_redistribute(IxNodeHandle *node, Transaction *tr
 
     IxNodeHandle *parent = fetch_node(node->get_parent_page_no());
     int index = parent->find_child(node);
+    PageId parent_page_id = parent->get_page_id();
 
     IxNodeHandle *neighbor = nullptr;
 
@@ -585,8 +586,10 @@ bool IxIndexHandle::coalesce_or_redistribute(IxNodeHandle *node, Transaction *tr
         assert(parent->get_size() > 1);
         neighbor = fetch_node(parent->value_at(1));
     }else{
-        neighbor = fetch_node(neighbor->value_at(index - 1));
+        neighbor = fetch_node(parent->value_at(index - 1));
     }
+
+    PageId neighbor_page_id = neighbor->get_page_id();
 
     if(node->get_size() + neighbor->get_size() >= node->get_min_size() * 2){
         redistribute(neighbor, node, parent, index);
@@ -596,9 +599,11 @@ bool IxIndexHandle::coalesce_or_redistribute(IxNodeHandle *node, Transaction *tr
         return false;
     }
 
+    //如果node是前驱会进行交换指针，此时node,neighbor已经不代表原来fetch出来的对象了，所以这里需要用id指向原来的对象
     coalesce(&neighbor, &node, &parent, index, transaction, root_is_latched);
-    assert(buffer_pool_manager_->unpin_page(neighbor->get_page_id(), true));
-    assert(buffer_pool_manager_->unpin_page(parent->get_page_id(), true));
+
+    assert(buffer_pool_manager_->unpin_page(neighbor_page_id, true));
+    assert(buffer_pool_manager_->unpin_page(parent_page_id, true));
 
     return false;
 }
